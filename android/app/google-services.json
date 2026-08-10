@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "166415382222",
+    "project_id": "fruttorto-8a5f9",
+    "storage_bucket": "fruttorto-8a5f9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166415382222:android:d5a8cc66362d9eb8ec829f",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMyH0NNsuIeCMghaqf_MD78e72C3LL0ZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
