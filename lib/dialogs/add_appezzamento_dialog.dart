@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:myapp/models/appezzamento.dart';
 import 'package:myapp/repositories/appezzamento_repository.dart';
+import 'package:myapp/services/geo_service.dart';
 
 class AddAppezzamentoDialog extends StatefulWidget {
   const AddAppezzamentoDialog({super.key});
@@ -13,15 +14,67 @@ class AddAppezzamentoDialog extends StatefulWidget {
 class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
   final _formKey = GlobalKey<FormState>();
   String _nome = '';
-  double _larghezza = 0.0;
-  double _lunghezza = 0.0;
-  String _regione = '';
-  String _provincia = '';
-  String _comune = '';
+  double? _larghezza;
+  double? _lunghezza;
+
+  String? _regioneSelezionata;
+  String? _provinciaSelezionata;
+  String? _comuneSelezionato;
+
+  List<String> _regioni = [];
+  List<String> _province = [];
+  List<String> _comuni = [];
+
+  bool _caricamentoIniziale = true;
   bool _salvataggioInCorso = false;
 
   @override
+  void initState() {
+    super.initState();
+    _caricaRegioni();
+  }
+
+  Future<void> _caricaRegioni() async {
+    final regioni = await GeoService.getRegioni();
+    setState(() {
+      _regioni = regioni;
+      _caricamentoIniziale = false;
+    });
+  }
+
+  Future<void> _onRegioneCambiata(String? regione) async {
+    if (regione == null) return;
+    final province = await GeoService.getProvince(regione);
+    setState(() {
+      _regioneSelezionata = regione;
+      _province = province;
+      _provinciaSelezionata = null;
+      _comuni = [];
+      _comuneSelezionato = null;
+    });
+  }
+
+  Future<void> _onProvinciaCambiata(String? provincia) async {
+    if (provincia == null) return;
+    final comuni = await GeoService.getComuni(provincia);
+    setState(() {
+      _provinciaSelezionata = provincia;
+      _comuni = comuni;
+      _comuneSelezionato = null;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_caricamentoIniziale) {
+      return const AlertDialog(
+        content: SizedBox(
+          height: 100,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return AlertDialog(
       title: const Text('Nuovo Appezzamento'),
       content: Form(
@@ -36,31 +89,46 @@ class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
                 onSaved: (value) => _nome = value!,
               ),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Larghezza (metri)'),
+                decoration: const InputDecoration(labelText: 'Larghezza (metri) - facoltativo'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value == null || double.tryParse(value) == null ? 'Inserisci un numero valido' : null,
-                onSaved: (value) => _larghezza = double.parse(value!),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return null;
+                  return double.tryParse(value) == null ? 'Inserisci un numero valido' : null;
+                },
+                onSaved: (value) => _larghezza = (value == null || value.isEmpty) ? null : double.parse(value),
               ),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Lunghezza (metri)'),
+                decoration: const InputDecoration(labelText: 'Lunghezza (metri) - facoltativo'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value == null || double.tryParse(value) == null ? 'Inserisci un numero valido' : null,
-                onSaved: (value) => _lunghezza = double.parse(value!),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return null;
+                  return double.tryParse(value) == null ? 'Inserisci un numero valido' : null;
+                },
+                onSaved: (value) => _lunghezza = (value == null || value.isEmpty) ? null : double.parse(value),
               ),
-              TextFormField(
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _regioneSelezionata,
                 decoration: const InputDecoration(labelText: 'Regione'),
-                validator: (value) => value == null || value.isEmpty ? 'Inserisci una regione' : null,
-                onSaved: (value) => _regione = value!,
+                items: _regioni.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                onChanged: _onRegioneCambiata,
+                validator: (value) => value == null ? 'Seleziona una regione' : null,
               ),
-              TextFormField(
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _provinciaSelezionata,
                 decoration: const InputDecoration(labelText: 'Provincia'),
-                validator: (value) => value == null || value.isEmpty ? 'Inserisci una provincia' : null,
-                onSaved: (value) => _provincia = value!,
+                items: _province.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                onChanged: _province.isEmpty ? null : _onProvinciaCambiata,
+                validator: (value) => value == null ? 'Seleziona una provincia' : null,
               ),
-              TextFormField(
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _comuneSelezionato,
                 decoration: const InputDecoration(labelText: 'Comune'),
-                validator: (value) => value == null || value.isEmpty ? 'Inserisci un comune' : null,
-                onSaved: (value) => _comune = value!,
+                items: _comuni.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: _comuni.isEmpty ? null : (value) => setState(() => _comuneSelezionato = value),
+                validator: (value) => value == null ? 'Seleziona un comune' : null,
               ),
             ],
           ),
@@ -94,13 +162,13 @@ class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
     setState(() => _salvataggioInCorso = true);
 
     final nuovoAppezzamento = Appezzamento(
-      id: '', // ignorato da Firestore in fase di add, verrà generato automaticamente
+      id: '',
       nome: _nome,
       larghezza: _larghezza,
       lunghezza: _lunghezza,
-      regione: _regione,
-      provincia: _provincia,
-      comune: _comune,
+      regione: _regioneSelezionata!,
+      provincia: _provinciaSelezionata!,
+      comune: _comuneSelezionato!,
       userId: user.uid,
     );
 
