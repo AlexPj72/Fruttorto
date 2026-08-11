@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/appezzamento.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier, debugPrint;
 
 class AppezzamentoRepository extends ChangeNotifier {
   final CollectionReference _collection =
