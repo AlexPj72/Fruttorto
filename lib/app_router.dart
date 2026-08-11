@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:myapp/models/appezzamento.dart';
 import 'package:myapp/screens/orto_screen.dart';
 import 'package:myapp/views/appezzamento_detail_screen.dart';
 import 'package:myapp/views/home_screen.dart';
 import 'package:myapp/views/login_screen.dart';
 
-// Definiamo la chiave globale per il navigatore
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter router = GoRouter(
-  navigatorKey: navigatorKey, // Colleghiamo la chiave al router
+  navigatorKey: navigatorKey,
   initialLocation: '/',
   routes: <GoRoute>[
     GoRoute(
@@ -20,10 +18,10 @@ final GoRouter router = GoRouter(
       },
       routes: <GoRoute>[
         GoRoute(
-          path: 'details',
+          path: 'details/:id',
           builder: (BuildContext context, GoRouterState state) {
-            final appezzamento = state.extra as Appezzamento;
-            return AppezzamentoDetailScreen(appezzamento: appezzamento);
+            final id = state.pathParameters['id']!;
+            return AppezzamentoDetailScreen(appezzamentoId: id);
           },
         ),
         GoRoute(
