@@ -1,39 +1,31 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-// Creiamo una finta classe User per non rompere i tipi di dato nel resto dell'app
-class MockUser {
-  final String uid;
-  final String? email;
-  MockUser({required this.uid, this.email});
-}
-
 class AuthService with ChangeNotifier {
-  // Simuliamo l'utente locale (se è null l'utente è disconnesso, altrimenti è loggato)
-  dynamic _user;
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  User? _user;
 
   AuthService() {
-    // Simuliamo un utente già loggato di default per farti entrare direttamente nell'app
-    _user = MockUser(uid: 'mock_123', email: 'test@fruttorto.com');
+    _user = _firebaseAuth.currentUser;
+    _firebaseAuth.authStateChanges().listen((User? user) {
+      _user = user;
+      notifyListeners();
+    });
   }
 
-  dynamic get user => _user;
-
+  User? get user => _user;
   bool get isLoggedIn => _user != null;
 
   Future<void> login(String email, String password) async {
     try {
-      // Simuliamo un caricamento di rete di mezzo secondo
-      await Future.delayed(const Duration(milliseconds: 500));
-      _user = MockUser(uid: 'mock_123', email: email);
-      notifyListeners();
+      await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint('Errore login: $e');
+      rethrow;
     }
   }
 
   Future<void> logout() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _user = null;
-    notifyListeners();
+    await _firebaseAuth.signOut();
   }
 }

@@ -2,16 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/appezzamento.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier, debugPrint;
 
 class AppezzamentoRepository extends ChangeNotifier {
   final CollectionReference _collection =
       FirebaseFirestore.instance.collection('appezzamenti');
   final AuthService _authService = AuthService();
-
   List<Appezzamento> _appezzamenti = [];
   Appezzamento? _appezzamentoAttivo;
 
   List<Appezzamento> get tuttiGliAppezzamenti => _appezzamenti;
+
   Appezzamento get appezzamentoAttivo =>
       _appezzamentoAttivo ??
       (tuttiGliAppezzamenti.isNotEmpty
@@ -19,6 +20,8 @@ class AppezzamentoRepository extends ChangeNotifier {
           : Appezzamento(
               id: 'placeholder',
               nome: 'Nessun appezzamento',
+              larghezza: null,
+              lunghezza: null,
               regione: '',
               provincia: '',
               comune: '',
@@ -40,22 +43,29 @@ class AppezzamentoRepository extends ChangeNotifier {
     }
   }
 
-  void _caricaAppezzamenti(String userId) {
-    _collection.where('userId', isEqualTo: userId).snapshots().listen((snapshot) {
-      _appezzamenti = snapshot.docs
-          .map((doc) => Appezzamento.fromFirestore(doc))
-          .toList();
-
-      if (_appezzamenti.isNotEmpty) {
-        final attivoEsiste = _appezzamenti.any((a) => a.id == _appezzamentoAttivo?.id);
-        if (!attivoEsiste) {
-          _appezzamentoAttivo = _appezzamenti.first;
+ void _caricaAppezzamenti(String userId) {
+    _collection.where('userId', isEqualTo: userId).snapshots().listen(
+      (snapshot) {
+        _appezzamenti = snapshot.docs
+            .map((doc) => Appezzamento.fromFirestore(doc))
+            .toList();
+        if (_appezzamenti.isNotEmpty) {
+          final attivoEsiste = _appezzamenti.any((a) => a.id == _appezzamentoAttivo?.id);
+          if (!attivoEsiste) {
+            _appezzamentoAttivo = _appezzamenti.first;
+          }
+        } else {
+          _appezzamentoAttivo = null;
         }
-      } else {
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('⚠️ Errore caricamento appezzamenti: $error');
+        _appezzamenti = [];
         _appezzamentoAttivo = null;
-      }
-      notifyListeners();
-    });
+        notifyListeners();
+      },
+    );
   }
 
   Future<void> aggiungiAppezzamento(Appezzamento appezzamento) async {

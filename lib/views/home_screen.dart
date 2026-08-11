@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/models/appezzamento.dart';
-import 'package:myapp/viewmodels/home_viewmodel.dart';
+import 'package:myapp/repositories/appezzamento_repository.dart';
 import 'package:myapp/views/widgets/add_appezzamento_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -10,8 +10,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomeViewModel>(
-      builder: (context, viewModel, child) {
+    return Consumer<AppezzamentoRepository>(
+      builder: (context, repo, child) {
         return Scaffold(
           appBar: AppBar(
             title: const Text('I Miei Appezzamenti'),
@@ -20,20 +20,20 @@ class HomeScreen extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => _mostraDialogAggiungi(context, viewModel),
+                onPressed: () => _mostraDialogAggiungi(context, repo),
                 tooltip: 'Aggiungi appezzamento',
               ),
             ],
           ),
           body: Column(
             children: [
-              _buildSelettoreAttivo(context, viewModel),
+              _buildSelettoreAttivo(context, repo),
               const Divider(height: 1),
-              Expanded(child: _buildListaAppezzamenti(context, viewModel)),
+              Expanded(child: _buildListaAppezzamenti(context, repo)),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _mostraDialogAggiungi(context, viewModel),
+            onPressed: () => _mostraDialogAggiungi(context, repo),
             label: const Text('Nuovo Appezzamento'),
             icon: const Icon(Icons.add),
             backgroundColor: const Color(0xFF6B8E23),
@@ -44,18 +44,19 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSelettoreAttivo(BuildContext context, HomeViewModel viewModel) {
+  Widget _buildSelettoreAttivo(BuildContext context, AppezzamentoRepository repo) {
+    final lista = repo.tuttiGliAppezzamenti;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: DropdownButtonFormField<Appezzamento>(
-        initialValue: viewModel.appezzamenti.isEmpty ? null : viewModel.appezzamentoAttivo,
+        initialValue: lista.isEmpty ? null : repo.appezzamentoAttivo,
         decoration: InputDecoration(
           labelText: 'Appezzamento Attivo',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
           fillColor: Colors.white,
         ),
-        items: viewModel.appezzamenti.map((appezzamento) {
+        items: lista.map((appezzamento) {
           return DropdownMenuItem<Appezzamento>(
             value: appezzamento,
             child: Text(
@@ -64,20 +65,24 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         }).toList(),
-        onChanged: (appezzamento) =>
-            viewModel.cambiaAppezzamentoAttivo(appezzamento),
+        onChanged: (appezzamento) {
+          if (appezzamento != null) {
+            repo.impostaAppezzamentoAttivo(appezzamento);
+          }
+        },
       ),
     );
   }
 
-  Widget _buildListaAppezzamenti(BuildContext context, HomeViewModel viewModel) {
-    if (viewModel.appezzamenti.isEmpty) {
+  Widget _buildListaAppezzamenti(BuildContext context, AppezzamentoRepository repo) {
+    final lista = repo.tuttiGliAppezzamenti;
+    if (lista.isEmpty) {
       return const Center(child: Text('Nessun appezzamento. Aggiungine uno!'));
     }
     return ListView.builder(
-      itemCount: viewModel.appezzamenti.length,
+      itemCount: lista.length,
       itemBuilder: (context, index) {
-        final appezzamento = viewModel.appezzamenti[index];
+        final appezzamento = lista[index];
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -95,19 +100,19 @@ class HomeScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
                   tooltip: 'Elimina appezzamento',
-                  onPressed: () => _mostraDialogConfermaEliminazione(context, viewModel, appezzamento),
+                  onPressed: () => _mostraDialogConfermaEliminazione(context, repo, appezzamento),
                 ),
                 const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
               ],
             ),
-            onTap: () => context.go('/details', extra: appezzamento),
+            onTap: () => context.go('/details/${appezzamento.id}'),
           ),
         );
       },
     );
   }
 
-  void _mostraDialogAggiungi(BuildContext context, HomeViewModel viewModel) {
+  void _mostraDialogAggiungi(BuildContext context, AppezzamentoRepository repo) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -117,7 +122,7 @@ class HomeScreen extends StatelessWidget {
       ),
       builder: (_) {
         return ChangeNotifierProvider.value(
-          value: viewModel,
+          value: repo,
           child: const AddAppezzamentoDialog(),
         );
       },
@@ -125,7 +130,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _mostraDialogConfermaEliminazione(
-      BuildContext context, HomeViewModel viewModel, Appezzamento appezzamento) {
+      BuildContext context, AppezzamentoRepository repo, Appezzamento appezzamento) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -148,8 +153,8 @@ class HomeScreen extends StatelessWidget {
               child: const Text('Elimina'),
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                await viewModel.eliminaAppezzamento(appezzamento.id);
-                
+                await repo.rimuoviAppezzamento(appezzamento.id);
+
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
