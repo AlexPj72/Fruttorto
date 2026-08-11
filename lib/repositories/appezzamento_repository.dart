@@ -19,8 +19,8 @@ class AppezzamentoRepository extends ChangeNotifier {
           : Appezzamento(
               id: 'placeholder',
               nome: 'Nessun appezzamento',
-              larghezza: 0.0,
-              lunghezza: 0.0,
+              larghezza: null,
+              lunghezza: null,
               regione: '',
               provincia: '',
               comune: '',
