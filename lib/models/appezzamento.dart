@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Appezzamento {
   final String id;
   final String nome;
-  final double larghezza;
-  final double lunghezza;
+  final double? larghezza;
+  final double? lunghezza;
   final String regione;
   final String provincia;
   final String comune;
@@ -13,8 +13,8 @@ class Appezzamento {
   Appezzamento({
     required this.id,
     required this.nome,
-    required this.larghezza,
-    required this.lunghezza,
+    this.larghezza,
+    this.lunghezza,
     required this.regione,
     required this.provincia,
     required this.comune,
@@ -26,8 +26,8 @@ class Appezzamento {
     return Appezzamento(
       id: doc.id,
       nome: data['nome'] ?? '',
-      larghezza: (data['larghezza'] ?? 0.0).toDouble(),
-      lunghezza: (data['lunghezza'] ?? 0.0).toDouble(),
+      larghezza: data['larghezza'] != null ? (data['larghezza'] as num).toDouble() : null,
+      lunghezza: data['lunghezza'] != null ? (data['lunghezza'] as num).toDouble() : null,
       regione: data['regione'] ?? '',
       provincia: data['provincia'] ?? '',
       comune: data['comune'] ?? '',
