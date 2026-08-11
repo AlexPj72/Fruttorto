@@ -7,11 +7,11 @@ class AppezzamentoRepository extends ChangeNotifier {
   final CollectionReference _collection =
       FirebaseFirestore.instance.collection('appezzamenti');
   final AuthService _authService = AuthService();
-
   List<Appezzamento> _appezzamenti = [];
   Appezzamento? _appezzamentoAttivo;
 
   List<Appezzamento> get tuttiGliAppezzamenti => _appezzamenti;
+
   Appezzamento get appezzamentoAttivo =>
       _appezzamentoAttivo ??
       (tuttiGliAppezzamenti.isNotEmpty
@@ -19,6 +19,8 @@ class AppezzamentoRepository extends ChangeNotifier {
           : Appezzamento(
               id: 'placeholder',
               nome: 'Nessun appezzamento',
+              larghezza: 0.0,
+              lunghezza: 0.0,
               regione: '',
               provincia: '',
               comune: '',
@@ -45,7 +47,6 @@ class AppezzamentoRepository extends ChangeNotifier {
       _appezzamenti = snapshot.docs
           .map((doc) => Appezzamento.fromFirestore(doc))
           .toList();
-
       if (_appezzamenti.isNotEmpty) {
         final attivoEsiste = _appezzamenti.any((a) => a.id == _appezzamentoAttivo?.id);
         if (!attivoEsiste) {
