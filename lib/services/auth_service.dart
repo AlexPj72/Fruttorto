@@ -15,4 +15,17 @@ class AuthService with ChangeNotifier {
 
   User? get user => _user;
   bool get isLoggedIn => _user != null;
+
+  Future<void> login(String email, String password) async {
+    try {
+      await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
+    } catch (e) {
+      debugPrint('Errore login: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> logout() async {
+    await _firebaseAuth.signOut();
+  }
 }
