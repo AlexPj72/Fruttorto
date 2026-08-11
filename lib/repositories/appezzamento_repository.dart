@@ -42,21 +42,29 @@ class AppezzamentoRepository extends ChangeNotifier {
     }
   }
 
-  void _caricaAppezzamenti(String userId) {
-    _collection.where('userId', isEqualTo: userId).snapshots().listen((snapshot) {
-      _appezzamenti = snapshot.docs
-          .map((doc) => Appezzamento.fromFirestore(doc))
-          .toList();
-      if (_appezzamenti.isNotEmpty) {
-        final attivoEsiste = _appezzamenti.any((a) => a.id == _appezzamentoAttivo?.id);
-        if (!attivoEsiste) {
-          _appezzamentoAttivo = _appezzamenti.first;
+ void _caricaAppezzamenti(String userId) {
+    _collection.where('userId', isEqualTo: userId).snapshots().listen(
+      (snapshot) {
+        _appezzamenti = snapshot.docs
+            .map((doc) => Appezzamento.fromFirestore(doc))
+            .toList();
+        if (_appezzamenti.isNotEmpty) {
+          final attivoEsiste = _appezzamenti.any((a) => a.id == _appezzamentoAttivo?.id);
+          if (!attivoEsiste) {
+            _appezzamentoAttivo = _appezzamenti.first;
+          }
+        } else {
+          _appezzamentoAttivo = null;
         }
-      } else {
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('⚠️ Errore caricamento appezzamenti: $error');
+        _appezzamenti = [];
         _appezzamentoAttivo = null;
-      }
-      notifyListeners();
-    });
+        notifyListeners();
+      },
+    );
   }
 
   Future<void> aggiungiAppezzamento(Appezzamento appezzamento) async {
