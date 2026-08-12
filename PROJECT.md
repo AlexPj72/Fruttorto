@@ -124,17 +124,17 @@ La "biblioteca" delle colture ha 3 livelli (questo è il cuore dell'app):
 - (2026-08-11) Menù a tendina: Regione → Provincia → Comune
 - (2026-08-11) Database geografico per i valori dei menù a tendina
 - (2026-08-11) Collegamento IDX ↔ GitHub ↔ Firebase attivo
+- (2026-08-12) Aggiunte le coordinate (lat/lon) a tutti i 7.904 comuni in `italia_geo.json`
+- (2026-08-12) Zona climatica (Nord/Centro/Sud) calcolata automaticamente dalla latitudine del comune scelto, mostrata nel form e nel dettaglio appezzamento
+- (2026-08-12) Modello Appezzamento e Firestore aggiornati per salvare lat, lon e zona
+- (2026-08-12) Pulsante opzionale "Usa la mia posizione": legge il GPS e compila da solo Regione/Provincia/Comune trovando il comune più vicino tra quelli già in app (nessuna chiamata a servizi esterni, funziona anche offline)
+- (2026-08-12) Corretti lint di stile Dart minori (createState pubblico, ordine argomento `child`)
 
 ### 🔜 Da fare (prossimi passi in ordine)
-1. [ ] **Assegnare Nord/Centro/Sud** in base al comune scelto (micro-task 1)
-2. [ ] **Lettura GPS in tempo reale** nel box "nuovo appezzamento":
-       - Pulsante "Usa la mia posizione"
-       - Il sistema legge coordinate → compila Regione/Provincia/Comune
-       - Reverse geocoding: test con Nominatim, poi match locale (ISTAT)
-3. [ ] Usare le coordinate GPS anche per il meteo (Open-Meteo)
-4. [ ] Creare prima scheda coltura (base + varietà)
-5. [ ] Aggiungere colture agli appezzamenti
-6. [ ] Tracciamento ciclo, promemoria, patologie da foto...
+1. [ ] Usare le coordinate (GPS o comune) anche per il meteo (Open-Meteo)
+2. [ ] Creare prima scheda coltura (base + varietà)
+3. [ ] Aggiungere colture agli appezzamenti
+4. [ ] Tracciamento ciclo, promemoria, patologie da foto...
 
 ### 🐞 Bug noti / problemi incontrati
 - (nessuno per ora)
@@ -144,7 +144,8 @@ La "biblioteca" delle colture ha 3 livelli (questo è il cuore dell'app):
 - Scelto **Open-Meteo** perché gratis e senza API key
 - Struttura colture su **3 strati** (base → varietà → territorio)
 - Posizione Nord/Centro/Sud assegnata AUTOMATICAMENTE dalla latitudine
-- Reverse geocoding: Nominatim per test, match locale per rilascio pubblico
+- Reverse geocoding: implementato subito con **match locale** (senza passare da Nominatim), perché le coordinate di tutti i comuni erano già state caricate in app per la zona climatica — stesso dato, due usi, zero costo aggiuntivo e nessuna dipendenza esterna fin dal primo giorno
+- Lettura del GPS del dispositivo tramite il pacchetto `geolocator` (richiede permesso di localizzazione su Android/browser)
 - Ideale app pubblica: cloud gratuito (Firebase/Google) — Aruba come riserva
 
 ## 8. Regole di lavoro (fondamentali per l'AI)
@@ -169,14 +170,15 @@ Toscana è Centro". Usando la **latitudine** (coordinata) la suddivisione è pre
 anche ai bordi delle zone. Dire all'AI: "usa la latitudine del comune per decidere
 Nord/Centro/Sud" la rende corretta e automatica.
 
-### Perché prima Nominatim e poi ISTAT (il reverse geocoding)
-- **Ora** (test): Nominatim è il più veloce da implementare. Le limitazioni
-  (1 richiesta/sec, attribuzione) non contano quando lo usi solo tu.
-- **In futuro** (app pubblica): le limitazioni di Nominatim diventerebbero un
-  problema. Per questo il match sui dati ISTAT scaricati in locale è la soluzione
-  "che non si rompe mai" e resta gratis anche con tanti utenti.
-- **Consiglio:** fai implementare entrambi con la stessa interfaccia, così il
-  passaggio futuro sarà un semplice cambio interno, senza riscrivere la logica.
+### Perché abbiamo saltato Nominatim e siamo andati diretti al match locale
+Il piano iniziale prevedeva Nominatim "per ora" e il match locale ISTAT "per dopo".
+Alla prova dei fatti non è servito neanche il passaggio intermedio: le coordinate
+di tutti i comuni erano già state caricate in app per calcolare la zona climatica,
+quindi usarle anche per il "comune più vicino al GPS" è stato un secondo utilizzo
+dello stesso dato, senza costo aggiuntivo. Risultato: reverse geocoding gratis,
+offline, senza limiti di richieste e senza dipendenze esterne fin dal primo giorno.
+Nominatim resta comunque un'opzione valida se in futuro servisse geocodificare
+un indirizzo preciso (via, civico) invece che il solo comune.
 
 ### Perché il meteo e la posizione usano la stessa coordinata
 Le coordinate che leggi dal GPS (o che ricavi dal comune) servono a TUTTO:

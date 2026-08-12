@@ -4,11 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:myapp/models/appezzamento.dart';
 import 'package:myapp/repositories/appezzamento_repository.dart';
 import 'package:myapp/services/geo_service.dart';
+import 'package:myapp/services/location_service.dart';
 
 class AddAppezzamentoDialog extends StatefulWidget {
   const AddAppezzamentoDialog({super.key});
   @override
-  _AddAppezzamentoDialogState createState() => _AddAppezzamentoDialogState();
+  State<AddAppezzamentoDialog> createState() => _AddAppezzamentoDialogState();
 }
 
 class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
@@ -19,14 +20,15 @@ class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
 
   String? _regioneSelezionata;
   String? _provinciaSelezionata;
-  String? _comuneSelezionato;
+  ComuneInfo? _comuneSelezionato;
 
   List<String> _regioni = [];
   List<String> _province = [];
-  List<String> _comuni = [];
+  List<ComuneInfo> _comuni = [];
 
   bool _caricamentoIniziale = true;
   bool _salvataggioInCorso = false;
+  bool _localizzazioneInCorso = false;
 
   @override
   void initState() {
@@ -62,6 +64,54 @@ class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
       _comuni = comuni;
       _comuneSelezionato = null;
     });
+  }
+
+  Future<void> _usaPosizioneGps() async {
+    setState(() => _localizzazioneInCorso = true);
+    try {
+      final posizione = await LocationService.posizioneCorrente();
+      final risultato = await GeoService.trovaComunePiuVicino(
+        posizione.latitude,
+        posizione.longitude,
+      );
+
+      final province = await GeoService.getProvince(risultato.regione);
+      final comuni = await GeoService.getComuni(risultato.provincia);
+      // Riprendo l'istanza dalla lista appena caricata, per farla combaciare
+      // con gli item del DropdownButtonFormField (confronto per identità).
+      final comuneTrovato = comuni.firstWhere(
+        (c) => c.nome == risultato.comune.nome,
+        orElse: () => risultato.comune,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _regioneSelezionata = risultato.regione;
+        _province = province;
+        _provinciaSelezionata = risultato.provincia;
+        _comuni = comuni;
+        _comuneSelezionato = comuneTrovato;
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Posizione rilevata: ${comuneTrovato.nome} '
+              '(~${risultato.distanzaKm.toStringAsFixed(1)} km dal comune più vicino)',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e is LocalizzazioneException ? e.messaggio : 'Errore nel rilevare la posizione: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _localizzazioneInCorso = false);
+    }
   }
 
   @override
@@ -107,6 +157,20 @@ class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
                 onSaved: (value) => _lunghezza = (value == null || value.isEmpty) ? null : double.parse(value),
               ),
               const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _localizzazioneInCorso ? null : _usaPosizioneGps,
+                icon: _localizzazioneInCorso
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location),
+                label: Text(_localizzazioneInCorso
+                    ? 'Rilevamento posizione…'
+                    : 'Usa la mia posizione (opzionale)'),
+              ),
+              const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _regioneSelezionata,
                 decoration: const InputDecoration(labelText: 'Regione'),
@@ -123,25 +187,35 @@ class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
                 validator: (value) => value == null ? 'Seleziona una provincia' : null,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
+              DropdownButtonFormField<ComuneInfo>(
                 initialValue: _comuneSelezionato,
                 decoration: const InputDecoration(labelText: 'Comune'),
-                items: _comuni.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                items: _comuni
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c.nome)))
+                    .toList(),
                 onChanged: _comuni.isEmpty ? null : (value) => setState(() => _comuneSelezionato = value),
                 validator: (value) => value == null ? 'Seleziona un comune' : null,
               ),
+              if (_comuneSelezionato != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Zona climatica: ${_comuneSelezionato!.zona}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
             ],
           ),
         ),
       ),
       actions: <Widget>[
         TextButton(
-          child: const Text('Annulla'),
           onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
         ),
         TextButton(
-          child: const Text('Salva'),
           onPressed: _salvataggioInCorso ? null : () => _salva(context),
+          child: const Text('Salva'),
         ),
       ],
     );
@@ -168,7 +242,10 @@ class _AddAppezzamentoDialogState extends State<AddAppezzamentoDialog> {
       lunghezza: _lunghezza,
       regione: _regioneSelezionata!,
       provincia: _provinciaSelezionata!,
-      comune: _comuneSelezionato!,
+      comune: _comuneSelezionato!.nome,
+      lat: _comuneSelezionato!.lat,
+      lon: _comuneSelezionato!.lon,
+      zona: _comuneSelezionato!.zona,
       userId: user.uid,
     );
 

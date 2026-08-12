@@ -8,6 +8,10 @@ class Appezzamento {
   final String regione;
   final String provincia;
   final String comune;
+  final double? lat;
+  final double? lon;
+  final String?
+  zona; // Nord / Centro / Sud, calcolata dalla latitudine del comune
   final String userId;
 
   Appezzamento({
@@ -18,6 +22,9 @@ class Appezzamento {
     required this.regione,
     required this.provincia,
     required this.comune,
+    this.lat,
+    this.lon,
+    this.zona,
     required this.userId,
   });
 
@@ -26,11 +33,18 @@ class Appezzamento {
     return Appezzamento(
       id: doc.id,
       nome: data['nome'] ?? '',
-      larghezza: data['larghezza'] != null ? (data['larghezza'] as num).toDouble() : null,
-      lunghezza: data['lunghezza'] != null ? (data['lunghezza'] as num).toDouble() : null,
+      larghezza: data['larghezza'] != null
+          ? (data['larghezza'] as num).toDouble()
+          : null,
+      lunghezza: data['lunghezza'] != null
+          ? (data['lunghezza'] as num).toDouble()
+          : null,
       regione: data['regione'] ?? '',
       provincia: data['provincia'] ?? '',
       comune: data['comune'] ?? '',
+      lat: data['lat'] != null ? (data['lat'] as num).toDouble() : null,
+      lon: data['lon'] != null ? (data['lon'] as num).toDouble() : null,
+      zona: data['zona'],
       userId: data['userId'] ?? '',
     );
   }
@@ -43,6 +57,9 @@ class Appezzamento {
       'regione': regione,
       'provincia': provincia,
       'comune': comune,
+      'lat': lat,
+      'lon': lon,
+      'zona': zona,
       'userId': userId,
     };
   }
