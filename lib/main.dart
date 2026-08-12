@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:myapp/app_router.dart';
-import 'package:myapp/viewmodels/home_viewmodel.dart';
 import 'package:myapp/repositories/appezzamento_repository.dart';
+import 'package:myapp/providers/garden_provider.dart';
+import 'package:myapp/services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,8 +30,9 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => HomeViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => AppezzamentoRepository()),
+        ChangeNotifierProvider(create: (_) => GardenProvider()),
       ],
       child: const OrtoApp(),
     ),
