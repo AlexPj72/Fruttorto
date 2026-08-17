@@ -57,7 +57,6 @@ class DefaultFirebaseOptions {
     projectId: 'fruttorto-8a5f9',
     storageBucket: 'fruttorto-8a5f9.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC53npHqQ2RETZXYD1Gd-oZNgVmS5_pBVQ',
     appId: '1:166415382222:ios:b5ce104cc95b139eec829f',

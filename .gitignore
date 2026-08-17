@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/release
 progetto.tar.gz
 progetto.zip
+fruttorto_build.zip
+_UPDATE_*.txt
+README_ISTRUZIONI.txt
