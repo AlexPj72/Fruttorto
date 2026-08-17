@@ -1,8 +1,0 @@
-AGGIUNGI QUESTI METODI al GardenProvider (in lib/providers/garden_provider.dart):
-
-  Future<void> setFase(String plantId, String fase) => _plantRepository.setFase(plantId, fase);
-
-  List<PlantModel> piantePerAppezzamento(String id) =>
-      _plants.where((p) => p.appezzamentoId == id).toList();
-
-  int contaFase(String fase) => _plants.where((p) => p.fase == fase).length;

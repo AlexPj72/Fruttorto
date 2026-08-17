@@ -1,6 +1,0 @@
-AGGIUNGI QUESTO METODO al PlantRepository (in lib/repositories/plant_repository.dart):
-
-  Future<void> setFase(String plantId, String fase) async {
-    final collection = _plantsCollection;
-    if (collection != null) await collection.doc(plantId).update({'fase': fase});
-  }
