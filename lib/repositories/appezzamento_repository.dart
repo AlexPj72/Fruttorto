@@ -5,8 +5,9 @@ import 'package:myapp/services/auth_service.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier, debugPrint;
 
 class AppezzamentoRepository extends ChangeNotifier {
-  final CollectionReference _collection =
-      FirebaseFirestore.instance.collection('appezzamenti');
+  final CollectionReference _collection = FirebaseFirestore.instance.collection(
+    'appezzamenti',
+  );
   final AuthService _authService = AuthService();
   List<Appezzamento> _appezzamenti = [];
   Appezzamento? _appezzamentoAttivo;
@@ -43,29 +44,34 @@ class AppezzamentoRepository extends ChangeNotifier {
     }
   }
 
- void _caricaAppezzamenti(String userId) {
-    _collection.where('userId', isEqualTo: userId).snapshots().listen(
-      (snapshot) {
-        _appezzamenti = snapshot.docs
-            .map((doc) => Appezzamento.fromFirestore(doc))
-            .toList();
-        if (_appezzamenti.isNotEmpty) {
-          final attivoEsiste = _appezzamenti.any((a) => a.id == _appezzamentoAttivo?.id);
-          if (!attivoEsiste) {
-            _appezzamentoAttivo = _appezzamenti.first;
-          }
-        } else {
-          _appezzamentoAttivo = null;
-        }
-        notifyListeners();
-      },
-      onError: (error) {
-        debugPrint('⚠️ Errore caricamento appezzamenti: $error');
-        _appezzamenti = [];
-        _appezzamentoAttivo = null;
-        notifyListeners();
-      },
-    );
+  void _caricaAppezzamenti(String userId) {
+    _collection
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            _appezzamenti = snapshot.docs
+                .map((doc) => Appezzamento.fromFirestore(doc))
+                .toList();
+            if (_appezzamenti.isNotEmpty) {
+              final attivoEsiste = _appezzamenti.any(
+                (a) => a.id == _appezzamentoAttivo?.id,
+              );
+              if (!attivoEsiste) {
+                _appezzamentoAttivo = _appezzamenti.first;
+              }
+            } else {
+              _appezzamentoAttivo = null;
+            }
+            notifyListeners();
+          },
+          onError: (error) {
+            debugPrint('⚠️ Errore caricamento appezzamenti: $error');
+            _appezzamenti = [];
+            _appezzamentoAttivo = null;
+            notifyListeners();
+          },
+        );
   }
 
   Future<void> aggiungiAppezzamento(Appezzamento appezzamento) async {
@@ -74,6 +80,13 @@ class AppezzamentoRepository extends ChangeNotifier {
 
   Future<void> rimuoviAppezzamento(String id) async {
     await _collection.doc(id).delete();
+  }
+
+  Future<void> aggiornaPacciamatura(String id, double cm) async {
+    await _collection.doc(id).update({
+      'pacciamaturaCm': cm,
+      'pacciamaturaData': Timestamp.now(),
+    });
   }
 
   void impostaAppezzamentoAttivo(Appezzamento appezzamento) {

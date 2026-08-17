@@ -26,18 +26,16 @@ class GardenProvider with ChangeNotifier {
 
   // Riceve la data personalizzata e il metodo scelti dall'utente
   Future<void> addNewPlant({
-    required String name,
-    required String type,
-    required int daysToHarvest,
+    required String appezzamentoId,
+    required String varietaId,
     required DateTime chosenDate,
-    required String method,
+    String method = 'Semina',
   }) async {
     final newPlant = PlantModel(
       id: '',
-      name: name,
-      type: type,
+      appezzamentoId: appezzamentoId,
+      varietaId: varietaId,
       plantedDate: chosenDate,
-      daysToHarvest: daysToHarvest,
       cultivationMethod: method,
     );
     await _plantRepository.addPlant(newPlant);
@@ -50,6 +48,14 @@ class GardenProvider with ChangeNotifier {
   Future<void> removePlant(String plantId) async {
     await _plantRepository.deletePlant(plantId);
   }
+
+  Future<void> setFase(String plantId, String fase) =>
+      _plantRepository.setFase(plantId, fase);
+
+  List<PlantModel> piantePerAppezzamento(String id) =>
+      _plants.where((p) => p.appezzamentoId == id).toList();
+
+  int contaFase(String fase) => _plants.where((p) => p.fase == fase).length;
 
   @override
   void dispose() {

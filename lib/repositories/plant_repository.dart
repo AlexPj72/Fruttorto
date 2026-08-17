@@ -19,10 +19,9 @@ class PlantRepository {
     final collection = _plantsCollection;
     if (collection == null) return Stream.value([]);
 
-    return collection
-        .orderBy('plantedDate', descending: true)
-        .snapshots()
-        .map((snapshot) {
+    return collection.orderBy('plantedDate', descending: true).snapshots().map((
+      snapshot,
+    ) {
       return snapshot.docs.map((doc) {
         return PlantModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
@@ -43,6 +42,13 @@ class PlantRepository {
     if (collection != null) {
       await collection.doc(plantId).update({'isWatered': !currentStatus});
     }
+  }
+
+  // Aggiorna la fase di crescita della pianta
+  Future<void> setFase(String plantId, String fase) async {
+    final collection = _plantsCollection;
+    if (collection != null)
+      await collection.doc(plantId).update({'fase': fase});
   }
 
   // Elimina una pianta

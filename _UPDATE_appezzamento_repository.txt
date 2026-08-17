@@ -1,0 +1,8 @@
+AGGIUNGI QUESTO METODO al AppezzamentoRepository (in lib/repositories/appezzamento_repository.dart):
+
+  Future<void> aggiornaPacciamatura(String id, double cm) async {
+    await _collection.doc(id).update({
+      'pacciamaturaCm': cm,
+      'pacciamaturaData': Timestamp.now(),
+    });
+  }

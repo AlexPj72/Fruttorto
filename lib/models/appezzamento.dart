@@ -13,6 +13,9 @@ class Appezzamento {
   final String?
   zona; // Nord / Centro / Sud, calcolata dalla latitudine del comune
   final String userId;
+  final String? esposizione; // 'Sole' | 'Penombra'
+  final double? pacciamaturaCm;
+  final DateTime? pacciamaturaData;
 
   Appezzamento({
     required this.id,
@@ -26,6 +29,9 @@ class Appezzamento {
     this.lon,
     this.zona,
     required this.userId,
+    this.esposizione,
+    this.pacciamaturaCm,
+    this.pacciamaturaData,
   });
 
   factory Appezzamento.fromFirestore(DocumentSnapshot doc) {
@@ -46,6 +52,9 @@ class Appezzamento {
       lon: data['lon'] != null ? (data['lon'] as num).toDouble() : null,
       zona: data['zona'],
       userId: data['userId'] ?? '',
+      esposizione: data['esposizione'],
+      pacciamaturaCm: (data['pacciamaturaCm'] as num?)?.toDouble(),
+      pacciamaturaData: (data['pacciamaturaData'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -61,6 +70,9 @@ class Appezzamento {
       'lon': lon,
       'zona': zona,
       'userId': userId,
+      'esposizione': esposizione,
+      'pacciamaturaCm': pacciamaturaCm,
+      'pacciamaturaData': pacciamaturaData,
     };
   }
 }

@@ -1,0 +1,20 @@
+AGGIUNGI QUESTI CAMPI al modello Appezzamento (in lib/models/appezzamento.dart):
+
+  final String? esposizione;      // 'Sole' | 'Penombra'
+  final double? pacciamaturaCm;
+  final DateTime? pacciamaturaData;
+
+E nel costruttore:
+  this.esposizione,
+  this.pacciamaturaCm,
+  this.pacciamaturaData,
+
+E in fromFirestore:
+  esposizione: data['esposizione'],
+  pacciamaturaCm: (data['pacciamaturaCm'] as num?)?.toDouble(),
+  pacciamaturaData: (data['pacciamaturaData'] as Timestamp?)?.toDate(),
+
+E in toFirestore:
+  'esposizione': esposizione,
+  'pacciamaturaCm': pacciamaturaCm,
+  'pacciamaturaData': pacciamaturaData,
